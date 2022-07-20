@@ -197,7 +197,6 @@ class WindowConnect:
 
         try:
             with open(os.path.join(Path.home(), ".config/quakesrdisplay/connection.conf")) as cfgCon:
-                print("Opened file")
                 defaults = json.load(cfgCon)
         except FileNotFoundError:
             pass
