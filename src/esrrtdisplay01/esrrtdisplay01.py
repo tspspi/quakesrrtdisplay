@@ -520,10 +520,12 @@ class QUAKESRRealtimeDisplay:
     def _msghandler_resetandenableaverage(self, message):
         self._runningAverageInit()
         self._averagedPeakData['enabled'] = True
-        self._window['chkRunAverage'].Update(True)
+        # self._window['chkRunAverage'].Update(True)
+        self._window.write_event_value("sigEnableAverage", "*")
     def _msghandler_stoprunningaverage(self, message):
         self._averagedPeakData['enabled'] = False
-        self._window['chkRunAverage'].Update(False)
+        #self._window['chkRunAverage'].Update(False)
+        self._window.write_event_value("sigDisableAverage", "*")
 
     def _msghandler_received_zeropeakdata(self, message):
         currents = []
@@ -1003,6 +1005,10 @@ class QUAKESRRealtimeDisplay:
             if event == "btnSimZero":
                 simMsg = simulatedMessage('quakesr/experiment/scan/peak/peakdata', simMessages[random.randint(0, len(simMessages)-1)])
                 self._msghandler_received_zeropeakdata(simMsg)
+            if event == "sigEnableAverage":
+                self._window['chkRunAverage'].Update(True)
+            if event == "sigDisableAverage":
+                self._window['chkRunAverage'].Update(False)
 
             # Redraw peak data if required ...
             self.redrawPeakData()
