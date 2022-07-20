@@ -272,8 +272,8 @@ class QUAKESRRealtimeDisplay:
         self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/start", self._msghandler_received_startscan)
         self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/done", self._msghandler_received_donescan)
 
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/start", self._msghandler_resetandenableaverage)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/done", self._msghandler_stoprunningaverage)
+        self._mqttHandlers.registerHandler("quakesr/experiment/scanuntil/start", self._msghandler_resetandenableaverage)
+        self._mqttHandlers.registerHandler("quakesr/experiment/scanuntil/done", self._msghandler_stoprunningaverage)
 
         self._showDiffInSigma = False
 
