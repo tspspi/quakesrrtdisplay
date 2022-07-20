@@ -1,5 +1,8 @@
 import paho.mqtt.client as mqtt
 
+from pathlib import Path
+import os
+
 import logging
 import json
 import math
@@ -184,6 +187,21 @@ class WindowConnect:
         pass
 
     def showConnect(self):
+        defaults = {
+            'broker' : '',
+            'port' : '',
+            'user' : '',
+            'password' : '',
+            'basetopic' : ''
+        }
+
+        try:
+            with open(os.path.join(Path.home(), ".config/quakesrdisplay/connection.conf")) as cfgCon:
+                print("Opened file")
+                defaults = json.load(cfgCon)
+        except FileNotFoundError:
+            pass
+
         layout = [
             [
                 sg.Column([
@@ -194,11 +212,11 @@ class WindowConnect:
                     [ sg.Text("Base topic:") ]
                 ]),
                 sg.Column([
-                    [ sg.InputText("10.0.3.23", key="txtBroker") ],
-                    [ sg.InputText("1883", key="txtBrokerPort") ],
-                    [ sg.InputText("mqtttest", key="txtBrokerUser") ],
-                    [ sg.InputText("CUyBc7UhaHzSD6VDTJKHYsJXtA7YUv", key="txtBrokerPassword") ],
-                    [ sg.InputText("quakesr/debug", key="txtBasetopic") ]
+                    [ sg.InputText(defaults['broker'], key="txtBroker") ],
+                    [ sg.InputText(defaults['port'], key="txtBrokerPort") ],
+                    [ sg.InputText(defaults['user'], key="txtBrokerUser") ],
+                    [ sg.InputText(defaults['password'], key="txtBrokerPassword") ],
+                    [ sg.InputText(defaults['basetopic'], key="txtBasetopic") ]
                 ]),
             ],
             [
@@ -503,10 +521,10 @@ class QUAKESRRealtimeDisplay:
     def _msghandler_resetandenableaverage(self, message):
         self._runningAverageInit()
         self._averagedPeakData['enabled'] = True
-        window['chkRunAverage'].Update(True)
+        self._window['chkRunAverage'].Update(True)
     def _msghandler_stoprunningaverage(self, message):
         self._averagedPeakData['enabled'] = False
-        window['chkRunAverage'].Update(False)
+        self._window['chkRunAverage'].Update(False)
 
     def _msghandler_received_zeropeakdata(self, message):
         currents = []
@@ -937,11 +955,12 @@ class QUAKESRRealtimeDisplay:
                     [ sg.Checkbox("Running average", default = False, key="chkRunAverage") ],
                     [ sg.Button("Reset running average", key="btnAvgReset") ],
                     [ sg.Button("Exit", key="btnExit") ]
-                ]),
-                sg.Column([
-                    [ sg.Button("Simulate Peak", key="btnSimPeak") ],
-                    [ sg.Button("Simulate Zero Peak", key="btnSimZero") ]
                 ])
+                #]),
+                #sg.Column([
+                #    [ sg.Button("Simulate Peak", key="btnSimPeak") ],
+                #    [ sg.Button("Simulate Zero Peak", key="btnSimZero") ]
+                #])
             ]
         ]
 
