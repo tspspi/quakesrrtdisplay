@@ -180,16 +180,16 @@ class QUAKESRRealtimeDisplay:
         self._lastscan = { 'start' : "", 'stop' : "", 'duration' : "", 'type' : "" }
         self._mqttHandlers = MQTTPatternMatcher()
 
-        self._mqttHandlers.registerHandler("{}scan/peak/peakdata", self._msghandler_received_peakdata)
-        self._mqttHandlers.registerHandler("{}scan/peak/zeropeakdata", self._msghandler_received_zeropeakdata)
-        self._mqttHandlers.registerHandler("{}scan/+/start", self._msghandler_received_startscan)
-        self._mqttHandlers.registerHandler("{}scan/+/done", self._msghandler_received_donescan)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/peak/peakdata", self._msghandler_received_peakdata)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/peak/zeropeakdata", self._msghandler_received_zeropeakdata)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/+/start", self._msghandler_received_startscan)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/+/done", self._msghandler_received_donescan)
 
-        self._mqttHandlers.registerHandler("{}scan/until/+/start", self._msghandler_received_startscan)
-        self._mqttHandlers.registerHandler("{}scan/until/+/done", self._msghandler_received_donescan)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/until/+/start", self._msghandler_received_startscan)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/until/+/done", self._msghandler_received_donescan)
 
-        self._mqttHandlers.registerHandler("{}scanuntil/start", self._msghandler_resetandenableaverage)
-        self._mqttHandlers.registerHandler("{}scanuntil/done", self._msghandler_stoprunningaverage)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scanuntil/start", self._msghandler_resetandenableaverage)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scanuntil/done", self._msghandler_stoprunningaverage)
 
         self._showDiffInSigma = False
 
