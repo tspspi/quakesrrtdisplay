@@ -205,6 +205,9 @@ class QUAKESRRealtimeDisplay:
             'changed' : False
         }
 
+        self._scanDurations = []
+        self._scanDurationsUpdated = True
+
         self._runningAverageInit()
 
     def _msghandler_received_startscan(self, message):
@@ -220,6 +223,8 @@ class QUAKESRRealtimeDisplay:
         etime = datetime.strptime(message.payload['endtime'], "%Y-%m-%d_%H:%M:%S")
 
         self._lastscan['duration'] = str((etime-stime).total_seconds()) + "s (" + str(etime - stime) + ")"
+        self._scanDurations.append((etime-stime).total_seconds())
+        self._scanDurationsUpdated = True
 
     def _msghandler_received_peakdata(self, message):
         currents = []
@@ -785,7 +790,19 @@ class QUAKESRRealtimeDisplay:
             self._figures['errDiff']['axis'].set_title(self._figures['errDiff']['title'])
             self._figures['errDiff']['fig_agg'].draw()
 
+    def redrawScanDurations(self):
+        if not self._scanDurationsUpdated:
+            return
+        self._scanDurationsUpdated = True
 
+        self._figures['scanDurations']['axis'].cla()
+        self._figures['scanDurations']['axis'].grid()
+        if len(self._scanDurations) > 0:
+            self._figures['scanDurations']['axis'].plot(self._scanDurations)
+        self._figures['scanDurations']['axis'].set_xlabel(self._figures['scanDurations']['xlabel'])
+        self._figures['scanDurations']['axis'].set_ylabel(self._figures['scanDurations']['ylabel'])
+        self._figures['scanDurations']['axis'].set_title(self._figures['scanDurations']['title'])
+        self._figures['scanDurations']['fig_agg'].draw()
 
     def run(self):
         # MQTT setup ...
@@ -842,6 +859,17 @@ class QUAKESRRealtimeDisplay:
                                     [ sg.Text("Error (Difference)") ],
                                     [ sg.Canvas(size=self._plotsize, key='canvErrDiffAVG') ]
                                 ], scrollable=False)
+                            ]
+                        ]),
+                        sg.Tab('Scan duration', [
+                            [
+                                sg.Column([
+                                    [ sg.Text("Scan duration") ],
+                                    [ sg.Canvas(size=self._plotsize, key='canvMeasDuration') ]
+                                ]),
+                                sg.Column([
+                                    [ sg.Button("Reset", key='btnResetMeasurementDuration')]
+                                ])
                             ]
                         ])
                 ]])
@@ -901,7 +929,9 @@ class QUAKESRRealtimeDisplay:
             'errZeroAvg' : self.__init_figure('canvErrZeroAVG', 'B0', 'uV', 'Zero error (averaged)'),
 
             'sigDiffAvg' : self.__init_figure('canvSigDiffAVG', 'B0', 'uV', 'Difference signal (averaged)'),
-            'errDiffAvg' : self.__init_figure('canvErrDiffAVG', 'B0', 'uV', 'Difference error (averaged)')
+            'errDiffAvg' : self.__init_figure('canvErrDiffAVG', 'B0', 'uV', 'Difference error (averaged)'),
+
+            'scanDurations' : self.__init_figure('canvMeasDuration', 'Scan', 'Duration [s]', 'Scan durations')
         }
 
         # Show window and react to events ...
@@ -916,10 +946,14 @@ class QUAKESRRealtimeDisplay:
                 self._window['chkRunAverage'].Update(True)
             if event == "sigDisableAverage":
                 self._window['chkRunAverage'].Update(False)
+            if event == "btnResetMeasurementDuration":
+                self._scanDurations = []
+                self._scanDurationsUpdated = True
 
             # Redraw peak data if required ...
             self.redrawPeakData()
             self.redrawAveragedData()
+            self.redrawScanDurations()
 
             # Update status string
             self._window['txtStatus'].Update(self._statusstring)
