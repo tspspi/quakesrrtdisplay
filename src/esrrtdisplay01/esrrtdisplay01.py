@@ -191,6 +191,8 @@ class QUAKESRRealtimeDisplay:
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scanuntil/start", self._msghandler_resetandenableaverage)
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scanuntil/done", self._msghandler_stoprunningaverage)
 
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}egun/beamcurrent/estimate", self._msghandler_beamcurrentestimate)
+
         self._showDiffInSigma = False
 
         self._lastPeakData = {
@@ -207,6 +209,10 @@ class QUAKESRRealtimeDisplay:
 
         self._scanDurations = []
         self._scanDurationsUpdated = True
+
+        self._ebeamCurrentEst = []
+        self._ebeamCurrentMeas = []
+        self._ebeamUpdated = True
 
         self._runningAverageInit()
 
@@ -225,6 +231,13 @@ class QUAKESRRealtimeDisplay:
         self._lastscan['duration'] = str((etime-stime).total_seconds()) + "s (" + str(etime - stime) + ")"
         self._scanDurations.append((etime-stime).total_seconds())
         self._scanDurationsUpdated = True
+
+    def _msghandler_beamcurrentestimate(self, message):
+        try:
+            self._ebeamCurrentEst.append(float(message.payload['current']))
+            self._ebeamUpdated = True
+        except:
+            pass
 
     def _msghandler_received_peakdata(self, message):
         currents = []
@@ -804,6 +817,29 @@ class QUAKESRRealtimeDisplay:
         self._figures['scanDurations']['axis'].set_title(self._figures['scanDurations']['title'])
         self._figures['scanDurations']['fig_agg'].draw()
 
+    def redrawBeamCurrent(self):
+        if not self._ebeamUpdated:
+            return
+        self._ebeamUpdated = False
+
+        self._figures['ebeamCurrentEst']['axis'].cla()
+        self._figures['ebeamCurrentEst']['axis'].grid()
+        if len(self._ebeamCurrentEst) > 0:
+            self._figures['ebeamCurrentEst']['axis'].plot(self._ebeamCurrentEst)
+        self._figures['ebeamCurrentEst']['axis'].set_xlabel(self._figures['ebeamCurrentEst']['xlabel'])
+        self._figures['ebeamCurrentEst']['axis'].set_ylabel(self._figures['ebeamCurrentEst']['ylabel'])
+        self._figures['ebeamCurrentEst']['axis'].set_title(self._figures['ebeamCurrentEst']['title'])
+        self._figures['ebeamCurrentEst']['fig_agg'].draw()
+
+        self._figures['ebeamCurrentMeas']['axis'].cla()
+        self._figures['ebeamCurrentMeas']['axis'].grid()
+        if len(self._ebeamCurrentMeas) > 0:
+            self._figures['ebeamCurrentMeas']['axis'].plot(self._ebeamCurrentMeas)
+        self._figures['ebeamCurrentMeas']['axis'].set_xlabel(self._figures['ebeamCurrentMeas']['xlabel'])
+        self._figures['ebeamCurrentMeas']['axis'].set_ylabel(self._figures['ebeamCurrentMeas']['ylabel'])
+        self._figures['ebeamCurrentMeas']['axis'].set_title(self._figures['ebeamCurrentMeas']['title'])
+        self._figures['ebeamCurrentMeas']['fig_agg'].draw()
+
     def run(self):
         # MQTT setup ...
         self.mqtt = mqtt.Client()
@@ -865,10 +901,18 @@ class QUAKESRRealtimeDisplay:
                             [
                                 sg.Column([
                                     [ sg.Text("Scan duration") ],
-                                    [ sg.Canvas(size=self._plotsize, key='canvMeasDuration') ]
-                                ]),
-                                sg.Column([
+                                    [ sg.Canvas(size=self._plotsize, key='canvMeasDuration') ],
                                     [ sg.Button("Reset", key='btnResetMeasurementDuration')]
+                                ])
+                            ]
+                        ]),
+                        sg.Tab('Electron beam', [
+                            [
+                                sg.Column([
+                                    [ sg.Text("Current (measured)") ],
+                                    [ sg.Canvas(size=self._plotsize, key='canvEbeamCurrentMeas') ],
+                                    [ sg.Text("Current (estimated)") ],
+                                    [ sg.Canvas(size=self._plotsize, key='canvEbeamCurrentEst') ]
                                 ])
                             ]
                         ])
@@ -931,7 +975,10 @@ class QUAKESRRealtimeDisplay:
             'sigDiffAvg' : self.__init_figure('canvSigDiffAVG', 'B0', 'uV', 'Difference signal (averaged)'),
             'errDiffAvg' : self.__init_figure('canvErrDiffAVG', 'B0', 'uV', 'Difference error (averaged)'),
 
-            'scanDurations' : self.__init_figure('canvMeasDuration', 'Scan', 'Duration [s]', 'Scan durations')
+            'scanDurations' : self.__init_figure('canvMeasDuration', 'Scan', 'Duration [s]', 'Scan durations'),
+
+            'ebeamCurrentMeas' : self.__init_figure('canvEbeamCurrentMeas', 'Scan', 'Current (uA)', 'Measured beam current'),
+            'ebeamCurrentEst' : self.__init_figure('canvEbeamCurrentEst', 'Scan', 'Current (uA)', 'Estimated beam current')
         }
 
         # Show window and react to events ...
@@ -954,6 +1001,7 @@ class QUAKESRRealtimeDisplay:
             self.redrawPeakData()
             self.redrawAveragedData()
             self.redrawScanDurations()
+            self.redrawBeamCurrent()
 
             # Update status string
             self._window['txtStatus'].Update(self._statusstring)
