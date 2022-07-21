@@ -920,8 +920,9 @@ class QUAKESRRealtimeDisplay:
                                     [ sg.Text("Current (measured)") ],
                                     [ sg.Canvas(size=self._plotsize, key='canvEbeamCurrentMeas') ],
                                     [ sg.Text("Current (estimated)") ],
-                                    [ sg.Canvas(size=self._plotsize, key='canvEbeamCurrentEst') ]
-                                ])
+                                    [ sg.Canvas(size=self._plotsize, key='canvEbeamCurrentEst') ],
+                                    [ sg.Button("Reset", key='btnResetBeamCurrent')]
+                                ]),
                             ]
                         ])
                 ]])
@@ -1004,6 +1005,10 @@ class QUAKESRRealtimeDisplay:
             if event == "btnResetMeasurementDuration":
                 self._scanDurations = []
                 self._scanDurationsUpdated = True
+            if event == "btnResetBeamCurrent":
+                self._ebeamCurrentEst = []
+                self._ebeamCurrentMeas = []
+                self._ebeamUpdated = True
 
             # Redraw peak data if required ...
             self.redrawPeakData()
