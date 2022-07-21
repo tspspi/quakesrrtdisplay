@@ -194,6 +194,8 @@ class QUAKESRRealtimeDisplay:
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}egun/beamcurrent/estimate", self._msghandler_beamcurrentestimate)
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}egun/beamcurrent/measurement", self._msghandler_beamcurrentmeasurement)
 
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/iteration", self._msghandler_received_scaniteration)
+
         self._showDiffInSigma = False
 
         self._lastPeakData = {
@@ -246,6 +248,16 @@ class QUAKESRRealtimeDisplay:
             self._ebeamUpdated = True
         except:
             pass
+
+    def _msghandler_received_scaniteration(self, message):
+        print("Iteration ...")
+        if not message.payload['diffscan']:
+            self._window.write_event_value('update_progress', (message.payload['i'] / message.payload['n']) * 100.0)
+        else:
+            if message.payload['zero']:
+                self._window.write_event_value('update_progresszero', (message.payload['i'] / message.payload['n']) * 100.0)
+            else:
+                self._window.write_event_value('update_progress', (message.payload['i'] / message.payload['n']) * 100.0)
 
     def _msghandler_received_peakdata(self, message):
         currents = []
@@ -929,10 +941,14 @@ class QUAKESRRealtimeDisplay:
             ],
             [
                 sg.Column([
-                    [ sg.Text("Status:") ]
+                    [ sg.Text("Status:") ],
+                    [ sg.Text("Current peak:")],
+                    [ sg.Text("Current zeropeak ")]
                 ]),
                 sg.Column([
-                    [ sg.Text("Not connected", key='txtStatus') ]
+                    [ sg.Text("Not connected", key='txtStatus') ],
+                    [ sg.ProgressBar(max_value=100, orientation='h', size=(20,20), key="progressPeak") ],
+                    [ sg.ProgressBar(max_value=100, orientation='h', size=(20,20), key="progressZeroPeak") ]
                 ]),
                 sg.Column([
                     [ sg.Text("Scan type:") ],
@@ -1009,6 +1025,12 @@ class QUAKESRRealtimeDisplay:
                 self._ebeamCurrentEst = []
                 self._ebeamCurrentMeas = []
                 self._ebeamUpdated = True
+            if event == "update_progress":
+                if values['update_progress'] == 0:
+                    self._window['progressZeroPeak'].Update(0.0)
+                self._window['progressPeak'].Update(values['update_progress'])
+            if event == "update_progresszero":
+                self._window['progressZeroPeak'].Update(values['update_progresszero'])
 
             # Redraw peak data if required ...
             self.redrawPeakData()
