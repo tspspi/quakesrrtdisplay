@@ -259,21 +259,24 @@ class QUAKESRRealtimeDisplay:
         plotsize = (320, 240)
     ):
         self._condata = connectionData
+        if self._condata['basetopic'][-1] != '/':
+            self._condata['basetopic'] = self._condata['basetopic'] + "/"
+
         self._plotsize = plotsize
         self._statusstring = "Not connected"
         self._lastscan = { 'start' : "", 'stop' : "", 'duration' : "", 'type' : "" }
         self._mqttHandlers = MQTTPatternMatcher()
 
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/peak/peakdata", self._msghandler_received_peakdata)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/peak/zeropeakdata", self._msghandler_received_zeropeakdata)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/+/start", self._msghandler_received_startscan)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/+/done", self._msghandler_received_donescan)
+        self._mqttHandlers.registerHandler("{}scan/peak/peakdata", self._msghandler_received_peakdata)
+        self._mqttHandlers.registerHandler("{}scan/peak/zeropeakdata", self._msghandler_received_zeropeakdata)
+        self._mqttHandlers.registerHandler("{}scan/+/start", self._msghandler_received_startscan)
+        self._mqttHandlers.registerHandler("{}scan/+/done", self._msghandler_received_donescan)
 
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/start", self._msghandler_received_startscan)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scan/until/+/done", self._msghandler_received_donescan)
+        self._mqttHandlers.registerHandler("{}scan/until/+/start", self._msghandler_received_startscan)
+        self._mqttHandlers.registerHandler("{}scan/until/+/done", self._msghandler_received_donescan)
 
-        self._mqttHandlers.registerHandler("quakesr/experiment/scanuntil/start", self._msghandler_resetandenableaverage)
-        self._mqttHandlers.registerHandler("quakesr/experiment/scanuntil/done", self._msghandler_stoprunningaverage)
+        self._mqttHandlers.registerHandler("{}scanuntil/start", self._msghandler_resetandenableaverage)
+        self._mqttHandlers.registerHandler("{}scanuntil/done", self._msghandler_stoprunningaverage)
 
         self._showDiffInSigma = False
 
@@ -290,9 +293,6 @@ class QUAKESRRealtimeDisplay:
         }
 
         self._runningAverageInit()
-
-        if self._condata['basetopic'][-1] != '/':
-            self._condata['basetopic'] = self._condata['basetopic'] + "/"
 
     def _msghandler_received_startscan(self, message):
         self._lastscan['start'] = message.payload['starttime']
