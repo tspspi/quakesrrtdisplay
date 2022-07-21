@@ -192,6 +192,7 @@ class QUAKESRRealtimeDisplay:
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scanuntil/done", self._msghandler_stoprunningaverage)
 
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}egun/beamcurrent/estimate", self._msghandler_beamcurrentestimate)
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}egun/beamcurrent/measurement", self._msghandler_beamcurrentmeasurement)
 
         self._showDiffInSigma = False
 
@@ -235,6 +236,13 @@ class QUAKESRRealtimeDisplay:
     def _msghandler_beamcurrentestimate(self, message):
         try:
             self._ebeamCurrentEst.append(float(message.payload['current']))
+            self._ebeamUpdated = True
+        except:
+            pass
+
+    def _msghandler_beamcurrentmeasurement(self, message):
+        try:
+            self._ebeamCurrentMeas.append(float(message.payload['current']))
             self._ebeamUpdated = True
         except:
             pass
