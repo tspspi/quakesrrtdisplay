@@ -196,6 +196,8 @@ class QUAKESRRealtimeDisplay:
 
         self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/iteration", self._msghandler_received_scaniteration)
 
+        self._mqttHandlers.registerHandler(f"{self._condata['basetopic']}scan/pointdata", self._msghandler_received_pointdata)
+
         self._showDiffInSigma = False
 
         self._lastPeakData = {
@@ -212,6 +214,14 @@ class QUAKESRRealtimeDisplay:
 
         self._scanDurations = []
         self._scanDurationsUpdated = True
+
+        self._lastPointData = {
+            'I' : [],
+            'i' : [],
+            'q' : [],
+            'changed' : True
+        }
+        self._pointdataClear = True
 
         self._ebeamCurrentEst = []
         self._ebeamCurrentMeas = []
@@ -250,6 +260,7 @@ class QUAKESRRealtimeDisplay:
             pass
 
     def _msghandler_received_scaniteration(self, message):
+        self._pointdataClear = True
         print("Iteration ...")
         if not message.payload['diffscan']:
             self._window.write_event_value('update_progress', (message.payload['i'] / message.payload['n']) * 100.0)
@@ -258,6 +269,22 @@ class QUAKESRRealtimeDisplay:
                 self._window.write_event_value('update_progresszero', (message.payload['i'] / message.payload['n']) * 100.0)
             else:
                 self._window.write_event_value('update_progress', (message.payload['i'] / message.payload['n']) * 100.0)
+
+    def _msghandler_received_pointdata(self, message):
+        if self._pointdataClear:
+            self._lastPointData = {
+                'I' : [],
+                'i' : [],
+                'q' : [],
+                'changed' : True
+            }
+            self._pointdataClear = False
+
+        self._lastPointData['I'].append(message.payload['I'])
+        self._lastPointData['i'].append(message.payload['i'])
+        self._lastPointData['q'].append(message.payload['q'])
+        print(self._lastPointData['I'])
+        self._lastPointData['changed'] = True
 
     def _msghandler_received_peakdata(self, message):
         currents = []
@@ -708,6 +735,25 @@ class QUAKESRRealtimeDisplay:
         self._figures['errDiffAvg']['axis'].set_title(self._figures['errDiffAvg']['title'])
         self._figures['errDiffAvg']['fig_agg'].draw()
 
+    def redrawPointData(self):
+        data = self._lastPointData
+        if not data['changed']:
+            return
+
+        self._lastPointData['changed'] = False
+
+        self._figures['pointCurScan']['axis'].cla()
+        self._figures['pointCurScan']['axis'].grid()
+        if len(data['I']) > 0:
+            self._figures['pointCurScan']['axis'].plot(data['I'], data['i'], label = 'I')
+            self._figures['pointCurScan']['axis'].plot(data['I'], data['q'], label = 'Q')
+            self._figures['pointCurScan']['axis'].legend()
+
+        self._figures['pointCurScan']['axis'].set_xlabel(self._figures['pointCurScan']['xlabel'])
+        self._figures['pointCurScan']['axis'].set_ylabel(self._figures['pointCurScan']['ylabel'])
+        self._figures['pointCurScan']['axis'].set_title(self._figures['pointCurScan']['title'])
+        self._figures['pointCurScan']['fig_agg'].draw()
+
     def redrawPeakData(self):
         data = self._lastPeakData
         if not data['changed']:
@@ -895,6 +941,14 @@ class QUAKESRRealtimeDisplay:
                                 ], scrollable=False)
                             ]
                         ]),
+                        sg.Tab('Point data',[
+                            [
+                                sg.Column([
+                                    [ sg.Text("Current peak points") ],
+                                    [ sg.Canvas(size=self._plotsize, key='canvPointCurScan') ]
+                                ], scrollable=False)
+                            ]
+                        ]),
                         sg.Tab('Average',[
                             [
                                 sg.Column([
@@ -1003,7 +1057,9 @@ class QUAKESRRealtimeDisplay:
             'scanDurations' : self.__init_figure('canvMeasDuration', 'Scan', 'Duration [s]', 'Scan durations'),
 
             'ebeamCurrentMeas' : self.__init_figure('canvEbeamCurrentMeas', 'Scan', 'Current (uA)', 'Measured beam current'),
-            'ebeamCurrentEst' : self.__init_figure('canvEbeamCurrentEst', 'Scan', 'Current (uA)', 'Estimated beam current')
+            'ebeamCurrentEst' : self.__init_figure('canvEbeamCurrentEst', 'Scan', 'Current (uA)', 'Estimated beam current'),
+
+            'pointCurScan' : self.__init_figure('canvPointCurScan', 'B0/f_RF', 'Current (uA)', 'Realtime points aquired' )
         }
 
         # Show window and react to events ...
@@ -1037,6 +1093,7 @@ class QUAKESRRealtimeDisplay:
             self.redrawAveragedData()
             self.redrawScanDurations()
             self.redrawBeamCurrent()
+            self.redrawPointData()
 
             # Update status string
             self._window['txtStatus'].Update(self._statusstring)
