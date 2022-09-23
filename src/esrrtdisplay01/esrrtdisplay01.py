@@ -261,7 +261,6 @@ class QUAKESRRealtimeDisplay:
 
     def _msghandler_received_scaniteration(self, message):
         self._pointdataClear = True
-        print("Iteration ...")
         if not message.payload['diffscan']:
             self._window.write_event_value('update_progress', (message.payload['i'] / message.payload['n']) * 100.0)
         else:
@@ -283,7 +282,6 @@ class QUAKESRRealtimeDisplay:
         self._lastPointData['I'].append(message.payload['I'])
         self._lastPointData['i'].append(message.payload['i'])
         self._lastPointData['q'].append(message.payload['q'])
-        print(self._lastPointData['I'])
         self._lastPointData['changed'] = True
 
     def _msghandler_received_peakdata(self, message):
