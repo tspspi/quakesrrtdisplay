@@ -11,7 +11,7 @@ import random
 
 from datetime import datetime
 
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
 from matplotlib.figure import Figure
 
@@ -220,6 +220,23 @@ class QUAKESRRealtimeDisplay:
             'i' : [],
             'q' : [],
             'changed' : True
+        }
+        self._currentPeakRealtime = {
+            'signal' : {
+                'I' : [],
+                'i' : [],
+                'q' : []
+            },
+            'zero' : {
+                'I' : [],
+                'i' : [],
+                'q' : []
+            },
+            'diff' : {
+                'I' : [],
+                'i' : [],
+                'q' : []
+            }
         }
         self._pointdataClear = True
 
@@ -906,7 +923,7 @@ class QUAKESRRealtimeDisplay:
 
     def run(self):
         # MQTT setup ...
-        self.mqtt = mqtt.Client()
+        self.mqtt = mqtt.Client(reconnect_on_failure=True)
         self.mqtt.on_connect = self._mqtt_on_connect
         self.mqtt.on_message = self._mqtt_on_message
 
