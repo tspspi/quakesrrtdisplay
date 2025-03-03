@@ -247,20 +247,27 @@ class QUAKESRRealtimeDisplay:
         self._runningAverageInit()
 
     def _msghandler_received_startscan(self, message):
-        self._lastscan['start'] = message.payload['starttime']
+        try:
+            self._lastscan['start'] = message.payload['starttime']
+        except:
+            self._lastscan['start'] = ""
+            pass
         self._lastscan['stop'] = ""
         self._lastscan['duration'] = ""
 
     def _msghandler_received_donescan(self, message):
-        self._lastscan['start'] = message.payload['starttime'].replace("_", " ")
-        self._lastscan['stop'] = message.payload['endtime'].replace("_", " ")
+        try:
+            self._lastscan['start'] = message.payload['starttime'].replace("_", " ")
+            self._lastscan['stop'] = message.payload['endtime'].replace("_", " ")
 
-        stime = datetime.strptime(message.payload['starttime'], "%Y-%m-%d_%H:%M:%S")
-        etime = datetime.strptime(message.payload['endtime'], "%Y-%m-%d_%H:%M:%S")
+            stime = datetime.strptime(message.payload['starttime'], "%Y-%m-%d_%H:%M:%S")
+            etime = datetime.strptime(message.payload['endtime'], "%Y-%m-%d_%H:%M:%S")
 
-        self._lastscan['duration'] = str((etime-stime).total_seconds()) + "s (" + str(etime - stime) + ")"
-        self._scanDurations.append((etime-stime).total_seconds())
-        self._scanDurationsUpdated = True
+            self._lastscan['duration'] = str((etime-stime).total_seconds()) + "s (" + str(etime - stime) + ")"
+            self._scanDurations.append((etime-stime).total_seconds())
+            self._scanDurationsUpdated = True
+        except:
+            pass
 
     def _msghandler_beamcurrentestimate(self, message):
         try:
